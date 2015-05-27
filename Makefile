@@ -1,3 +1,6 @@
+accounts.csv: input_files
+	bin/extract-accounts.py
+
 data/filelist.txt: data/filelist.html bin/extract-filelist.py
 	bin/extract-filelist.py "$<" > "$@"
 
@@ -9,7 +12,7 @@ data/Accounts_Bulk_Data-%.zip:
 
 ZIPFILES=$(shell sed 's/^/data\//' data/filelist.txt)
 
-all: data/filelist.txt $(ZIPFILES)
+input_files: data/filelist.txt $(ZIPFILES)
 	bin/unzip-all.sh
 
-.PHONY: all
+.PHONY: input_files
