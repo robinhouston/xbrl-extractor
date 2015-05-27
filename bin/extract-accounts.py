@@ -52,9 +52,8 @@ def extract_accounts_inline(filepath):
 	
 	name = None
 	x = parse_nsmap(filepath)
-	for e in x.findall("//{http://www.xbrl.org/2008/inlineXBRL}nonNumeric"):
+	for e in x.findall(".//{http://www.xbrl.org/2008/inlineXBRL}nonNumeric"):
 		prefix = e.get("xmlns:map")["http://www.xbrl.org/uk/cd/business/2009-09-01"]
-		print >>sys.stderr, e.get("name"), prefix
 		if e.get("name") == prefix + ":EntityCurrentLegalOrRegisteredName":
 			name = get_element_text(e)
 	return [ name ]
@@ -62,7 +61,7 @@ def extract_accounts_inline(filepath):
 def extract_accounts_xml(filepath):
 	print >>sys.stderr, "Loading {}...".format(filepath)
 	x = cElementTree.parse(filepath)
-	name = x.find("//{http://www.xbrl.org/uk/fr/gcd/2004-12-01}EntityCurrentLegalName").text
+	name = x.find(".//{http://www.xbrl.org/uk/fr/gcd/2004-12-01}EntityCurrentLegalName").text
 	return [ name ]
 
 def process(path):
