@@ -9,11 +9,16 @@ import sys
 
 from xml.etree import cElementTree
 
-NS_MAP = "xmlns:map"
-
 w = csv.writer(sys.stdout)
+w.writerow([
+	"company_number", "balance_sheet_date",
+	"registered_name",
+	"ProfitLossAccountReserve_date", "ProfitLossAccountReserve_value",
+	"TangibleFixedAssetsCostOrValuation_date", "TangibleFixedAssetsCostOrValuation_value",
+])
 
 def parse_nsmap(file):
+	namespaces_by_element = {}
 	events = "start", "start-ns", "end-ns"
 
 	root = None
@@ -28,9 +33,9 @@ def parse_nsmap(file):
 		elif event == "start":
 			if root is None:
 				root = elem
-			elem.set(NS_MAP, dict(ns_map))
+			namespaces_by_element[elem] = dict(ns_map)
 
-	return cElementTree.ElementTree(root)
+	return cElementTree.ElementTree(root), namespaces_by_element
 
 def get_element_text(element):
 	text = element.text or ""
@@ -38,6 +43,9 @@ def get_element_text(element):
 		text += get_element_text(e) + " "
 	text += (element.tail or "")
 	return text.strip()
+
+def xml_serialise(element):
+	return cElementTree.tostring(element, encoding="utf-8")
 
 def extract_accounts(filepath, filetype):
 	if filetype == "html":
@@ -47,22 +55,76 @@ def extract_accounts(filepath, filetype):
 	else:
 		raise Exception("Unknown filetype: " + filetype)
 
+def get_instant(period):
+	instant = period.find("{http://www.xbrl.org/2003/instance}instant")
+	if instant is not None:
+		return instant.text
+	else:
+		return None
+
+def get_contexts(x):
+	contexts = {}
+	for e in x.findall(".//{http://www.xbrl.org/2003/instance}context"):
+		contexts[e.get("id")] = e.find("./{http://www.xbrl.org/2003/instance}period")
+	return contexts
+
 def extract_accounts_inline(filepath):
 	print >>sys.stderr, "Loading {}...".format(filepath)
 	
 	name = None
-	x = parse_nsmap(filepath)
+	x, namespaces_by_element = parse_nsmap(filepath)
+	contexts = get_contexts(x)
+	
 	for e in x.findall(".//{http://www.xbrl.org/2008/inlineXBRL}nonNumeric"):
-		prefix = e.get("xmlns:map")["http://www.xbrl.org/uk/cd/business/2009-09-01"]
-		if e.get("name") == prefix + ":EntityCurrentLegalOrRegisteredName":
+		prefix = namespaces_by_element[e].get("http://www.xbrl.org/uk/cd/business/2009-09-01")
+		if prefix is not None and e.get("name") == prefix + ":EntityCurrentLegalOrRegisteredName":
 			name = get_element_text(e)
-	return [ name ]
+	
+	latest_plar_instant, latest_plar_value = get_gaap_value(x, namespaces_by_element, contexts, "ProfitLossAccountReserve")
+	latest_cost_instant, latest_cost_value = get_gaap_value(x, namespaces_by_element, contexts, "TangibleFixedAssetsCostOrValuation")
+	
+	return [ name, latest_plar_instant, latest_plar_value, latest_cost_instant, latest_cost_value ]
+
+def get_gaap_value(x, namespaces_by_element, contexts, element_name):
+	all_values = []
+	for e in x.findall(".//{http://www.xbrl.org/2008/inlineXBRL}nonFraction"):
+		prefix = namespaces_by_element[e].get("http://www.xbrl.org/uk/gaap/core/2009-09-01")
+		if prefix is not None and e.get("name") == prefix + ":" + element_name:
+			period = contexts[e.get("contextRef")]
+			instant = get_instant(period)
+			if instant:
+				all_values.append((instant, e.text))
+	
+	if not all_values:
+		return None, None
+	else:
+		instant, value = max(all_values, key=lambda(instant,x): instant)
+		return instant, re.sub(r",", "", value)
+
+def get_gaap_value_xml(x, namespaces_by_element, contexts, element_name):
+	all_values = []
+	for e in x.findall(".//{http://www.xbrl.org/uk/fr/gaap/pt/2004-12-01}" + element_name):
+		period = contexts[e.get("contextRef")]
+		instant = get_instant(period)
+		if instant:
+			all_values.append((instant, e.text))
+	
+	if not all_values:
+		return None, None
+	else:
+		instant, value = max(all_values, key=lambda(instant,x): instant)
+		return instant, re.sub(r",", "", value)
 
 def extract_accounts_xml(filepath):
 	print >>sys.stderr, "Loading {}...".format(filepath)
-	x = cElementTree.parse(filepath)
+	x, namespaces_by_element = parse_nsmap(filepath)
+	contexts = get_contexts(x)
 	name = x.find(".//{http://www.xbrl.org/uk/fr/gcd/2004-12-01}EntityCurrentLegalName").text
-	return [ name ]
+	
+	latest_plar_instant, latest_plar_value = get_gaap_value_xml(x, namespaces_by_element, contexts, "ProfitLossAccountReserve")
+	latest_cost_instant, latest_cost_value = get_gaap_value_xml(x, namespaces_by_element, contexts, "TangibleFixedAssetsCostOrValuation")
+	
+	return [ name, latest_plar_instant, latest_plar_value, latest_cost_instant, latest_cost_value ]
 
 def process(path):
 	filename = os.path.basename(path)
