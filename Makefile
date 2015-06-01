@@ -1,5 +1,5 @@
 accounts.csv: data/.input-files
-	bin/extract-accounts.py > "$@"
+	bin/extract-accounts.py > "$@" || rm "$@"
 
 data/filelist.txt: data/filelist.html bin/extract-filelist.py
 	bin/extract-filelist.py "$<" > "$@"
