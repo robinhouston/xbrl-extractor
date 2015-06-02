@@ -42,7 +42,7 @@ def get_element_text(element):
 	for e in element:
 		text += get_element_text(e) + " "
 	text += (element.tail or "")
-	return text.strip()
+	return re.sub(r"\s+", " ", text).strip()
 
 def xml_serialise(element):
 	return cElementTree.tostring(element, encoding="utf-8")
