@@ -126,12 +126,18 @@ def extract_accounts_xml(filepath):
 	
 	return [ name, latest_plar_instant, latest_plar_value, latest_cost_instant, latest_cost_value ]
 
+def writerow(row):
+	w.writerow([
+		x.encode("utf-8") if isinstance(x, unicode) else x
+		for x in row
+	])
+
 def process(path):
 	filename = os.path.basename(path)
 	mo = re.match("^(Prod\d+_\d+)_([^_]+)_(\d\d\d\d\d\d\d\d)\.(html|xml)", filename)
 	run_code, company, date, filetype = mo.groups()
 	accounts = extract_accounts(path, filetype)
-	w.writerow([company, date] + accounts)
+	writerow([company, date] + accounts)
 
 if len(sys.argv) > 1:
 	for f in sys.argv[1:]:
