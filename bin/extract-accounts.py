@@ -148,5 +148,11 @@ else:
 		if not os.path.isdir(d): continue
 		for f in os.listdir(d):
 			p = os.path.join(d, f)
-			process(p)
+			try:
+				process(p)
+			except:
+				import traceback
+				print >>sys.stderr, "\n\nException processing: " + p
+				traceback.print_exc(file=sys.stderr)
+				print >>sys.stderr, "\n\n"
 
