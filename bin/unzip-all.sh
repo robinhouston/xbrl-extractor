@@ -3,5 +3,8 @@
 for z in data/Accounts_Bulk_Data-*.zip
 do
 	d=${z%.zip}
-	unzip -o "$z" -d "$d"
+	if [ ! -e "$d" ]
+	then
+		unzip -o "$z" -d "$d"
+	fi
 done
