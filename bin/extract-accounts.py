@@ -139,20 +139,26 @@ def process(path):
 	accounts = extract_accounts(path, filetype)
 	writerow([company, date] + accounts)
 
+def process_dir(d):
+	for f in os.listdir(d):
+		p = os.path.join(d, f)
+		try:
+			process(p)
+		except:
+			import traceback
+			print >>sys.stderr, "\n\nException processing: " + p
+			traceback.print_exc(file=sys.stderr)
+			print >>sys.stderr, "\n\n"
+
 if len(sys.argv) > 1:
 	for f in sys.argv[1:]:
-		process(f)
+		if os.path.isdir(f):
+			process_dir(f)
+		else:
+			process(f)
 else:
 	for x in os.listdir("data"):
 		d = os.path.join("data", x)
-		if not os.path.isdir(d): continue
-		for f in os.listdir(d):
-			p = os.path.join(d, f)
-			try:
-				process(p)
-			except:
-				import traceback
-				print >>sys.stderr, "\n\nException processing: " + p
-				traceback.print_exc(file=sys.stderr)
-				print >>sys.stderr, "\n\n"
+		if os.path.isdir(d):
+			process_dir(d)
 
