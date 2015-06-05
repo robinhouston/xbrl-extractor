@@ -68,6 +68,9 @@ def get_contexts(x):
 		contexts[e.get("id")] = e.find("./{http://www.xbrl.org/2003/instance}period")
 	return contexts
 
+def get_value(e):
+	return e.get("sign", "") + re.sub(r",", "", e.text)
+
 def extract_accounts_inline(filepath):
 	print >>sys.stderr, "Loading {}...".format(filepath)
 	
@@ -93,13 +96,13 @@ def get_gaap_value(x, namespaces_by_element, contexts, element_name):
 			period = contexts[e.get("contextRef")]
 			instant = get_instant(period)
 			if instant:
-				all_values.append((instant, e.text))
+				all_values.append((instant, get_value(e)))
 	
 	if not all_values:
 		return None, None
 	else:
 		instant, value = max(all_values, key=lambda(instant,x): instant)
-		return instant, re.sub(r",", "", value)
+		return instant, value
 
 def get_gaap_value_xml(x, namespaces_by_element, contexts, element_name):
 	all_values = []
@@ -107,13 +110,13 @@ def get_gaap_value_xml(x, namespaces_by_element, contexts, element_name):
 		period = contexts[e.get("contextRef")]
 		instant = get_instant(period)
 		if instant:
-			all_values.append((instant, e.text))
+			all_values.append((instant, get_value(e)))
 	
 	if not all_values:
 		return None, None
 	else:
 		instant, value = max(all_values, key=lambda(instant,x): instant)
-		return instant, re.sub(r",", "", value)
+		return instant, value
 
 def extract_accounts_xml(filepath):
 	print >>sys.stderr, "Loading {}...".format(filepath)
