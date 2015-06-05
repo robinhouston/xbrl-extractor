@@ -70,7 +70,10 @@ def get_contexts(x):
 	return contexts
 
 def get_value(e):
-	return e.get("sign", "") + re.sub(r",", "", e.text)
+	sign = -1 if e.get("sign", "") == "-" else +1
+	text = e.text
+	if text == "-": return 0
+	return sign * float(re.sub(r",", "", text)) * 10**int(e.get("scale", "0"))
 
 def extract_accounts_inline(filepath):
 	print >>sys.stderr, "Loading {}...".format(filepath)
