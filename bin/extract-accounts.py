@@ -15,6 +15,7 @@ w.writerow([
 	"registered_name",
 	"ProfitLossAccountReserve_date", "ProfitLossAccountReserve_value",
 	"TangibleFixedAssetsCostOrValuation_date", "TangibleFixedAssetsCostOrValuation_value",
+	"IntangibleFixedAssetsCostOrValuation_date", "IntangibleFixedAssetsCostOrValuation_value",
 ])
 
 def parse_nsmap(file):
@@ -84,9 +85,15 @@ def extract_accounts_inline(filepath):
 			name = get_element_text(e)
 	
 	latest_plar_instant, latest_plar_value = get_gaap_value(x, namespaces_by_element, contexts, "ProfitLossAccountReserve")
-	latest_cost_instant, latest_cost_value = get_gaap_value(x, namespaces_by_element, contexts, "TangibleFixedAssetsCostOrValuation")
+	latest_tangible_instant, latest_tangible_value = get_gaap_value(x, namespaces_by_element, contexts, "TangibleFixedAssetsCostOrValuation")
+	latest_intangible_instant, latest_intangible_value = get_gaap_value(x, namespaces_by_element, contexts, "IntangibleFixedAssetsCostOrValuation")
 	
-	return [ name, latest_plar_instant, latest_plar_value, latest_cost_instant, latest_cost_value ]
+	return [
+		name,
+		latest_plar_instant, latest_plar_value,
+		latest_tangible_instant, latest_tangible_value,
+		latest_intangible_instant, latest_intangible_value,
+	]
 
 def get_gaap_value(x, namespaces_by_element, contexts, element_name):
 	all_values = []
@@ -125,9 +132,15 @@ def extract_accounts_xml(filepath):
 	name = x.find(".//{http://www.xbrl.org/uk/fr/gcd/2004-12-01}EntityCurrentLegalName").text
 	
 	latest_plar_instant, latest_plar_value = get_gaap_value_xml(x, namespaces_by_element, contexts, "ProfitLossAccountReserve")
-	latest_cost_instant, latest_cost_value = get_gaap_value_xml(x, namespaces_by_element, contexts, "TangibleFixedAssetsCostOrValuation")
+	latest_tangible_instant, latest_tangible_value = get_gaap_value_xml(x, namespaces_by_element, contexts, "TangibleFixedAssetsCostOrValuation")
+	latest_intangible_instant, latest_intangible_value = get_gaap_value_xml(x, namespaces_by_element, contexts, "TangibleFixedAssetsCostOrValuation")
 	
-	return [ name, latest_plar_instant, latest_plar_value, latest_cost_instant, latest_cost_value ]
+	return [
+		name,
+		latest_plar_instant, latest_plar_value,
+		latest_tangible_instant, latest_tangible_value,
+		latest_intangible_instant, latest_intangible_value,
+	]
 
 def writerow(row):
 	w.writerow([
