@@ -9,11 +9,11 @@ accounts.csv: $(csv_files)
 data/Accounts_Bulk_Data-%.zip:
 	curl -L -o "$@" http://download.companieshouse.gov.uk/$(@F)
 
-data/Accounts_Bulk_Data-%: data/Accounts_Bulk_Data-%.zip
-	unzip -o "$@" "$<"
-
 data/Accounts_Bulk_Data-%.csv: data/Accounts_Bulk_Data-% bin/extract-accounts.py
 	bin/extract-accounts.py "$<" > "$@"
+
+data/Accounts_Bulk_Data-%: data/Accounts_Bulk_Data-%.zip
+	unzip -o "$@" "$<"
 
 # For debugging. E.g. `make print-csv_files`
 print-%:
